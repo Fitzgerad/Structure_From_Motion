@@ -90,8 +90,9 @@ class fundamental_matrix():
     def getInliers(self, kp1, kp2, matches, Fundamental_matrix):
         inliers = []
         for match in matches:
-            error = np.dot(kp2[match.trainIdx].pt + (1,),
-                           np.dot(Fundamental_matrix, np.array(kp1[match.queryIdx].pt + (1,)).T))
+            x = np.array([kp1[match.queryIdx].pt[0], kp1[match.queryIdx].pt[1], 1])
+            y = np.array([kp2[match.trainIdx].pt[0], kp2[match.trainIdx].pt[1], 1])
+            error = np.dot(y, np.dot(Fundamental_matrix, x.T))
             # print(error)
             if abs(error) < FUNDAMENTAL_RANSAC_THRESHOLD:
                 inliers.append(match)

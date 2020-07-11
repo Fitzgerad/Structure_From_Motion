@@ -1,8 +1,8 @@
+import cv2
+import numpy as np
 from fundamental_matrix import fundamental_matrix
 from global_config import *
-import numpy as np
 from points_utils import *
-import cv2
 
 class essential_matrix():
     def __init__(self):
@@ -21,43 +21,44 @@ class essential_matrix():
 
     def projectImg(self, base_index, proj_index):
         Fundamental_matrix, inliers, kp1, kp2 = self.F.projectImg(base_index, proj_index)
-        Essential_matrix = self.getEMatrix(Fundamental_matrix)
+        # Essential_matrix = self.getEMatrix(Fundamental_matrix)
         # print(Essential_matrix)
-        # initial_points = np.array([kp1[match.queryIdx].pt for match in inliers])
-        # projected_points = np.array([kp2[match.trainIdx].pt for match in inliers])
-        # print(cv2.findEssentialMat(initial_points, projected_points, INTRINSIC_MATRIX))
+        initial_points = np.array([kp1[match.queryIdx].pt for match in inliers])
+        projected_points = np.array([kp2[match.trainIdx].pt for match in inliers])
+        Essential_matrix = cv2.findEssentialMat(initial_points, projected_points, INTRINSIC_MATRIX)[0]
         if type(Essential_matrix) == int:
             return None
         self.esitimatePosition(Essential_matrix, inliers, kp1, kp2, base_index)
 
     def esitimatePosition(self, Essential_matrix, inliers, kp1, kp2, base_index):
-        U, sigma, V = np.linalg.svd(Essential_matrix)
-        C1 = U[:, 2]
-        C2 = np.negative(C1)
-        R1 = U.dot(W_MATRIX).dot(V)
-        # print(R1, np.linalg.det(R1))
-        if np.linalg.det(R1) < 0:
-            R1 = np.negative(R1)
-        # print(R1, np.linalg.det(R1))
-        R2 = U.dot(W_MATRIX.T).dot(V)
-        if np.linalg.det(R2) < 0:
-            R2 = np.negative(R2)
-        alternatives = [[C1, R1], [C1, R2],
-                        [C2, R1], [C2, R2]]
-        errors = [0, 0, 0, 0]
-        for i in range(4):
-            errors[i] = self.computeErrors(alternatives[i][0], alternatives[i][1], inliers, kp1, kp2)
-        print(len(inliers), errors)
-        C, R = alternatives[errors.index(min(errors))]
-        print(C, R)
-        points = self.getPoints(C, R, inliers, kp1, kp2)
-        self.showPoints(points, inliers, kp1, base_index)
-        # P1 = INTRINSIC_MATRIX.dot(np.c_[np.identity(3), np.array([0, 0, 0])])
-        # P2 = INTRINSIC_MATRIX.dot(R.dot(np.c_[np.identity(3), np.negative(C)]))
-        # initial_points = np.array([kp1[match.queryIdx].pt for match in inliers])
-        # projected_points = np.array([kp2[match.trainIdx].pt for match in inliers])
-        # X = cv2.triangulatePoints(P1[:3], P2[:3], initial_points.T, projected_points.T)
-        # pcwrite("leile.ply", (X/X[3])[0:3].T)
+        initial_points = np.array([kp1[match.queryIdx].pt for match in inliers])
+        projected_points = np.array([kp2[match.trainIdx].pt for match in inliers])
+        points, R, t, mask = cv2.recoverPose(Essential_matrix, initial_points, projected_points, INTRINSIC_MATRIX)
+        P1 = INTRINSIC_MATRIX.dot(np.c_[np.identity(3), np.array([0, 0, 0])])
+        P2 = INTRINSIC_MATRIX.dot(R.dot(np.c_[np.identity(3), np.negative(t)]))
+        X = cv2.triangulatePoints(P1[:3], P2[:3], initial_points.T, projected_points.T)
+        pcwrite("leile.ply", (X / X[3])[0:3].T)
+
+        # U, sigma, V = np.linalg.svd(Essential_matrix)
+        # C1 = U[:, 2]
+        # C2 = np.negative(C1)
+        # R1 = U.dot(W_MATRIX).dot(V)
+        # if np.linalg.det(R1) < 0:
+        #     R1 = np.negative(R1)
+        # R2 = U.dot(W_MATRIX.T).dot(V)
+        # if np.linalg.det(R2) < 0:
+        #     R2 = np.negative(R2)
+        # alternatives = [[C1, R1], [C1, R2],
+        #                 [C2, R1], [C2, R2]]
+        # errors = [0, 0, 0, 0]
+        # for i in range(4):
+        #     errors[i] = self.computeErrors(alternatives[i][0], alternatives[i][1], inliers, kp1, kp2)
+        # print(len(inliers), errors)
+        # C, R = alternatives[errors.index(min(errors))]
+        #
+        # print(C, R)
+        # points = self.getPoints(C, R, inliers, kp1, kp2)
+        # self.showPoints(points, inliers, kp1, base_index)
         return points
 
     def showPoints(self, points, inliers, kp1, base_index):
@@ -80,9 +81,12 @@ class essential_matrix():
                       u*P2[2] - P2[0], v*P2[2] - P2[1]]
             U, sigma, V = np.linalg.svd(A)
             X = V[:, -1]
-            for i in range(4):
-                X[i] /= X[3]
-            if R[2].dot((X[0:3][0] - C)) < 0:
+            X /= X[3]
+            if(np.mat(C).shape == (1, 3)):
+                C = np.mat(C).T
+            else:
+                C = np.mat(C)
+            if R[2].dot((X[0:3] - C)) < 0:
                 errors += 1
         return errors
 
@@ -97,10 +101,14 @@ class essential_matrix():
                       u*P2[2] - P2[0], v*P2[2] - P2[1]]
             U, sigma, V = np.linalg.svd(A)
             X = V[:, -1]
-            for i in range(4):
-                X[i] /= X[3]
-            points.append(X[0:3])
+            X /= X[3]
+            if (np.mat(C).shape == (1, 3)):
+                C = np.mat(C).T
+            else:
+                C = np.mat(C)
+            if R[2].dot((X[0:3] - C)) < 0:
+                points.append(X[0:3])
         return points
 
 E = essential_matrix()
-print(E.projectImg(1, 0))
+print(E.projectImg(0, 1))
