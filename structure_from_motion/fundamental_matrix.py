@@ -110,15 +110,15 @@ class fundamental_matrix():
         matches = self.matchFeatures(des1, des2)
         if len(matches) >= 300:
             Fundamental_matrix, inliers = self.ranSAC(matches, kp1, kp2)
-
+        # self.showInliers(self.images[base_index], self.images[proj_index], kp1, kp2, inliers)
         return Fundamental_matrix, inliers, kp1, kp2
 
-    def showInliners(self, img1, img2, kp1, kp2, inliners):
+    def showInliers(self, img1, img2, kp1, kp2, inliers):
         draw_params = dict(matchColor = (0,255,0), # draw matches in green color
                           singlePointColor = None,
                           flags = 2)
         cv2.namedWindow('Match Image', cv2.WINDOW_NORMAL)
-        img3 = cv2.drawMatches(img1, kp1, img2, kp2, inliners, None, **draw_params)
+        img3 = cv2.drawMatches(img1, kp1, img2, kp2, inliers, None, **draw_params)
         cv2.imshow("Match Image", img3)
         cv2.resizeWindow("Match Image", 1800, 500)
         cv2.waitKey(0)

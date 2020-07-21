@@ -145,9 +145,10 @@ def combine():
 def main():
     E = essential_matrix()
     num = E.F.size
-    for i in range(0, num-1):
-        E.projectImg(i,i+1)
-        print (i)
+    combine()
+    # for i in range(0, num-1):
+    #     E.projectImg(i,i+1)
+    #     print (i)
 
 if __name__ == '__main__':
     main()
