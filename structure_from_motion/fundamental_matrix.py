@@ -21,8 +21,7 @@ class fundamental_matrix():
                 image_path = os.path.join(DIR_PATH, image_name)
                 self.images.append(cv2.imread(image_path))
             return True
-        else:
-            return False
+        return False
 
     def getFeatures(self, img):
         temp_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -64,14 +63,19 @@ class fundamental_matrix():
         I_most = 0
         I_best = []
         iter_times = int(math.log(0.01) / math.log(1 - pow(0.8, FUNDAMENTAL_RANSAC_SIZE)))
+
         for k in range(iter_times):
             indexs = random.sample(range(len(matches)), FUNDAMENTAL_RANSAC_SIZE)
+
             initial_points = [kp1[matches[indexs[i]].queryIdx].pt + (1,) for i in range(FUNDAMENTAL_RANSAC_SIZE)]
             projected_points = [kp2[matches[indexs[i]].trainIdx].pt + (1,) for i in range(FUNDAMENTAL_RANSAC_SIZE)]
+
             Fundamental_matrix = self.getFMatrix(initial_points, projected_points)
+
             inliers = self.getInliers(kp1, kp2, matches, Fundamental_matrix)
             if len(inliers) <= FUNDAMENTAL_RANSAC_SIZE:
                 continue
+
             initial_points = [kp1[match.queryIdx].pt + (1,) for match in inliers]
             projected_points = [kp2[match.trainIdx].pt + (1,) for match in inliers]
             Fundamental_matrix = self.getFMatrix(initial_points, projected_points)
@@ -99,18 +103,14 @@ class fundamental_matrix():
         return inliers
 
     def projectImg(self, base_index, proj_index):
+
         kp1, des1 = self.sift.detectAndCompute(self.images[base_index], None)
         kp2, des2 = self.sift.detectAndCompute(self.images[proj_index], None)
+
         matches = self.matchFeatures(des1, des2)
         if len(matches) >= 300:
-            # indexs = random.sample(range(len(matches)), FUNDAMENTAL_RANSAC_SIZE)
-            # initial_points = [kp1[matches[indexs[i]].queryIdx].pt + (1,) for i in range(FUNDAMENTAL_RANSAC_SIZE)]
-            # projected_points = [kp2[matches[indexs[i]].trainIdx].pt + (1,) for i in range(FUNDAMENTAL_RANSAC_SIZE)]
-            # self.matrix[base_index][proj_index] = self.getFMatrix(initial_points, projected_points)
-            # inliners = self.getInliners(kp1, kp2, matches, self.matrix[base_index][proj_index])
-            # self.showInliners(self.images[base_index], self.images[proj_index], kp1, kp2, inliners)
             Fundamental_matrix, inliers = self.ranSAC(matches, kp1, kp2)
-            self.showInliners(self.images[base_index], self.images[proj_index], kp1, kp2, inliers)
+
         return Fundamental_matrix, inliers, kp1, kp2
 
     def showInliners(self, img1, img2, kp1, kp2, inliners):
