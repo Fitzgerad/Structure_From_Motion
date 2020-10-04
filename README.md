@@ -41,7 +41,7 @@ $$
 
 - 使用$ransac$在有限次的迭代内找到比较有限的基础矩阵。算法内容具体如下：
 
-![image-20200721112317269](report.assets/ransac.png)
+![image-20200721112317269](doc/report.assets/ransac.png)
 
 <center>算法一 RANSAC求最优基础矩阵</center>
 
@@ -87,7 +87,7 @@ $$
 
 ### 三角化
 
-这里稍微提一下，我在实验中首先按照教辅给出的[实验指导](..\doc\计算机视觉2020春_实验三.pdf)进行实现，但是始终没有成功，重建出来的结果往往是一条简单的直线，导致了我在进行$R,t$的筛选时也出了很多错误。可能是我在操作中有某些细节没有真正把正负、符号对应关系正确匹配上。在几次尝试未果后，我改用了以下方法：
+这里稍微提一下，我在实验中首先按照教辅给出的[实验指导](doc\计算机视觉2020春_实验三.pdf)进行实现，但是始终没有成功，重建出来的结果往往是一条简单的直线，导致了我在进行$R,t$的筛选时也出了很多错误。可能是我在操作中有某些细节没有真正把正负、符号对应关系正确匹配上。在几次尝试未果后，我改用了以下方法：
 
 * 基于上一过程中解得的$R$和$t$以及一组平面对应点$x=\begin{bmatrix}x_1\\y_1\\1\end{bmatrix}$和$x'=\begin{bmatrix}x_2\\y_2\\1\end{bmatrix}$，首先对应求得两个相机的pose矩阵$P$：
 
@@ -116,17 +116,17 @@ $$
 
 如下图一所示，首先给出ransac筛选出的匹配特征点对应关系。就我个人用眼睛的检查而言，效果还是不错的，但在之后的步骤中，这一结果显得并不让人满意。
 
-![correspondences](report.assets/correspondences.png)
+![correspondences](doc/report.assets/correspondences.png)
 
 <center>图一 ransac找到的correspondences</center>
 
 ### 第一组图片单独映射的结果
 
-![image-20200721112317269](report.assets/image-20200721112317269.png)
+![image-20200721112317269](doc/report.assets/image-20200721112317269.png)
 
 <center>图二 使用cv2库五点法求出的essential Matrix的还原效果</center>
 
-![image-20200721112455102](report.assets/image-20200721112455102.png)
+![image-20200721112455102](doc/report.assets/image-20200721112455102.png)
 
 <center>图三 使用我们的方法求出的essential Matrix的还原效果</center>
 
@@ -134,13 +134,13 @@ $$
 
 ### 第二组图片单独映射的结果
 
-![image-20200721115056751](report.assets/image-20200721115056751.png)
+![image-20200721115056751](doc/report.assets/image-20200721115056751.png)
 
 <center>图四 使用我们的方法求出的essential Matrix在第二组图片上的还原效果</center>
 
 ### 第二组图片映射的全局结果
 
-![global_result](report.assets/global_result.png)
+![global_result](doc/report.assets/global_result.png)
 
 <center>图五 使用我们的方法求出的essential Matrix在第二组图片上的还原结果</center>
 
